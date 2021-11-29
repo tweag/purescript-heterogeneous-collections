@@ -8,7 +8,7 @@ import Data.Map.Heterogeneous
   , fromRecord
   , lookup
   , update
-  , set
+  , upsert
   , toRecord
   )
 import Data.Map.Heterogeneous.Gen (genHMap)
@@ -47,8 +47,8 @@ spec :: Spec Unit
 spec = do
   describe "lookup@_foo" $ elimSpec (lookup _foo) (Record.get _foo)
   describe "lookup@_bar" $ elimSpec (lookup _bar) (Record.get _bar)
-  describe "set@_foo" $ termSpec2 (set _foo) Just (Record.set _foo)
-  describe "set@_bar" $ termSpec2 (set _bar) Just (Record.set _bar)
+  describe "upsert@_foo" $ termSpec2 (upsert _foo) Just (Record.set _foo)
+  describe "upsert@_bar" $ termSpec2 (upsert _bar) Just (Record.set _bar)
   describe "clear@_foo" $ termSpec (clear _foo) (Record.set _foo Nothing)
   describe "clear@_bar" $ termSpec (clear _bar) (Record.set _bar Nothing)
   describe "update@_foo" do

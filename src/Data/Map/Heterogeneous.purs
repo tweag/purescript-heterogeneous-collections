@@ -12,19 +12,19 @@ module Data.Map.Heterogeneous
   , fromRecord
   , hmapFromRecord
   , hmapToRecord
+  , insert
   , isEmpty
   , lookup
   , pop
-  , push
   , rename
-  , set
-  , setWith
   , showHMapFields
   , singleton
   , size
   , toRecord
   , union
   , update
+  , upsert
+  , upsertWith
   ) where
 
 import Prelude
@@ -43,7 +43,6 @@ import Record as Record
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
--- TODO rename setWith to insertWith
 -- TODO add unionWith :: Record duplicateHandlers -> HMap r1 -> HMap r2 -> HMap r3
 -- TODO add union :: HMap r1 -> HMap r2 -> HMap r3
 -- TODO add unions :: f (HMap r) -> HMap r
@@ -168,7 +167,7 @@ instance hmapRecordCons ::
   hmapFromRecord _ r =
     case Record.get label r of
       Nothing -> unsafeCoerce $ hmapFromRecord rl $ unsafeCoerce r
-      Just a -> push label a $ hmapFromRecord rl $ unsafeCoerce r
+      Just a -> insert label a $ hmapFromRecord rl $ unsafeCoerce r
     where
     label :: Proxy l
     label = Proxy
@@ -186,22 +185,34 @@ lookup
   -> Maybe a
 lookup k (HMap m) = unsafeGet Just Nothing (reflectSymbol k) m
 
--- | Add a value to a HMap without affecting the row type.
-set
-  :: forall r1 r2 r l a b
+-- | Insert a value at the specified key.
+insert
+  :: forall r1 r2 l a
    . IsSymbol l
-  => R.Cons l a r r1
-  => R.Cons l b r r2
+  => R.Lacks l r1
+  => R.Cons l a r1 r2
   => Proxy l
+  -> a
+  -> HMap r1
+  -> HMap r2
+insert p a (HMap m) = HMap $ unsafeSet (reflectSymbol p) a m
+
+-- | Insert or update a value at the specified key.
+upsert
+  :: forall r1 r2 r k a b
+   . IsSymbol k
+  => R.Cons k a r r1
+  => R.Cons k b r r2
+  => Proxy k
   -> b
   -> HMap r1
   -> HMap r2
-set p b (HMap m) = HMap $ unsafeSet (reflectSymbol p) b m
+upsert p b (HMap m) = HMap $ unsafeSet (reflectSymbol p) b m
 
 -- | Add a value to a HMap without affecting the row type. The provided
 -- | function is used to combine the new value with the existing value, if
 -- | there is one.
-setWith
+upsertWith
   :: forall r1 r2 r l a b
    . IsSymbol l
   => R.Cons l a r r1
@@ -211,7 +222,7 @@ setWith
   -> b
   -> HMap r1
   -> HMap r2
-setWith f k b m = flip (set k) m $ maybe b (f b) $ lookup k m
+upsertWith f k b m = flip (upsert k) m $ maybe b (f b) $ lookup k m
 
 -- | Remove a value from a HMap, removing the label from the row.
 delete
@@ -262,19 +273,7 @@ update
   -> HMap r2
 update p f m = case lookup p m of
   Nothing -> unsafeCoerce m
-  Just a -> set p (f a) m
-
--- | Add a value to a HMap, adding a new label to the row.
-push
-  :: forall r1 r2 l a
-   . IsSymbol l
-  => R.Lacks l r1
-  => R.Cons l a r1 r2
-  => Proxy l
-  -> a
-  -> HMap r1
-  -> HMap r2
-push p a (HMap m) = HMap $ unsafeSet (reflectSymbol p) a m
+  Just a -> upsert p (f a) m
 
 -- | Add new labels to the row.
 expand :: forall r1 r2 r. R.Union r1 r2 r => HMap r1 -> HMap r
@@ -311,7 +310,7 @@ rename
 rename prev next r =
   case lookup prev r of
     Nothing -> addLabel next (delete prev r :: HMap inter)
-    Just a -> push next a (delete prev r :: HMap inter)
+    Just a -> insert next a (delete prev r :: HMap inter)
 
 -- | Create a Row Map with one element
 singleton
@@ -322,7 +321,7 @@ singleton
   => Proxy label
   -> a
   -> HMap r
-singleton label a = push label a empty
+singleton label a = insert label a empty
 
 -- | The number of keys present in the map
 size :: forall r. HMap r -> Int
