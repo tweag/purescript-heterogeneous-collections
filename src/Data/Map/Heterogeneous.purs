@@ -14,10 +14,12 @@ module Data.Map.Heterogeneous
   , hmapFromRecord
   , hmapToRecord
   , insert
+  , isEmpty
   , modify
   , rename
   , set
   , setWith
+  , size
   , showHMapFields
   , toRecord
   ) where
@@ -33,6 +35,7 @@ import Data.Map.Heterogeneous.Unsafe
   , unsafeEmpty
   , unsafeGet
   , unsafeSet
+  , unsafeSize
   )
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (joinWith)
@@ -55,11 +58,9 @@ import Unsafe.Coerce (unsafeCoerce)
 -- TODO add unions :: f (HMap r) -> HMap r
 -- TODO add toUnfoldable :: HMap r -> f (Variant r)
 -- TODO add unsafeToUnfoldable :: HMap r -> f (Variant r)      (unrdered)
--- TODO add size :: HMap r -> Int
 -- TODO add singleton :: Variant r -> HMap r
 -- TODO add member :: Proxy l -> HMap r -> Boolean
 -- TODO add isSubmap :: HMap r1 -> HMap r2 -> Boolean
--- TODO add isEmpty :: HMap r -> Boolean
 -- TODO add intersectionWith :: Record duplicateHandlers -> HMap r1 -> HMap r2 -> HMap duplicates
 -- TODO add intersection :: HMap r1 -> HMap r2 -> HMap r3
 -- TODO add intersections :: f (HMap r) -> HMap r
@@ -302,6 +303,14 @@ rename prev next r =
   case get prev r of
     Nothing -> addLabel next (delete prev r :: HMap inter)
     Just a -> insert next a (delete prev r :: HMap inter)
+
+-- | The number of keys present in the map
+size :: forall r. HMap r -> Int
+size (HMap unsafe) = unsafeSize unsafe
+
+-- | True for maps with no keys
+isEmpty :: forall r. HMap r -> Boolean
+isEmpty = eq 0 <<< size
 
 -- | Create an empty Row Map
 empty :: forall r. HMap r

@@ -46,4 +46,8 @@ exports.unsafeMember = function (label) {
   };
 };
 
+exports.unsafeSize = function (map) {
+  return Object.keys(map).length;
+};
+
 exports.unsafeEmpty = {};
