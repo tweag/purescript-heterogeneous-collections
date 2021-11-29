@@ -15,6 +15,7 @@ module Data.Map.Heterogeneous
   , insert
   , isEmpty
   , lookup
+  , member
   , pop
   , rename
   , showHMapFields
@@ -22,6 +23,7 @@ module Data.Map.Heterogeneous
   , size
   , toRecord
   , union
+  , unions
   , update
   , upsert
   , upsertWith
@@ -30,9 +32,10 @@ module Data.Map.Heterogeneous
 import Prelude
 
 import Data.Array as Array
+import Data.Foldable (class Foldable, foldl)
 import Data.List (List)
 import Data.List as List
-import Data.Map.Heterogeneous.Unsafe (UnsafeHMap, unsafeEmpty, unsafeGet, unsafePop, unsafeSet, unsafeSize, unsafeUnion)
+import Data.Map.Heterogeneous.Unsafe (UnsafeHMap, unsafeEmpty, unsafeGet, unsafeMember, unsafePop, unsafeSet, unsafeSize, unsafeUnion)
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -43,12 +46,9 @@ import Record as Record
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
--- TODO add unionWith :: Record duplicateHandlers -> HMap r1 -> HMap r2 -> HMap r3
--- TODO add union :: HMap r1 -> HMap r2 -> HMap r3
--- TODO add unions :: f (HMap r) -> HMap r
+-- TODO add HMap and HFoldl instances
 -- TODO add toUnfoldable :: HMap r -> f (Variant r)
 -- TODO add unsafeToUnfoldable :: HMap r -> f (Variant r)      (unrdered)
--- TODO add member :: Proxy l -> HMap r -> Boolean
 -- TODO add isSubmap :: HMap r1 -> HMap r2 -> Boolean
 -- TODO add intersectionWith :: Record duplicateHandlers -> HMap r1 -> HMap r2 -> HMap duplicates
 -- TODO add intersection :: HMap r1 -> HMap r2 -> HMap r3
@@ -185,6 +185,16 @@ lookup
   -> Maybe a
 lookup k (HMap m) = unsafeGet Just Nothing (reflectSymbol k) m
 
+-- | Test if a key is present.
+member
+  :: forall r' r k a
+   . IsSymbol k
+  => R.Cons k a r' r
+  => Proxy k
+  -> HMap r
+  -> Boolean
+member k (HMap m) = unsafeMember (reflectSymbol k) m
+
 -- | Insert a value at the specified key.
 insert
   :: forall r1 r2 l a
@@ -279,7 +289,14 @@ update p f m = case lookup p m of
 expand :: forall r1 r2 r. R.Union r1 r2 r => HMap r1 -> HMap r
 expand = unsafeCoerce
 
--- | Union two HMaps
+-- | Union many HMaps
+unions :: forall f r. Foldable f => f (HMap r) -> HMap r
+unions maps = HMap $ foldl (flip (unsafeUnion <<< unHMap)) unsafeEmpty maps
+  where
+  unHMap (HMap m) = m
+
+-- | Compute the union of two maps, preferring values from the first map in the
+-- | of duplicate keys
 union :: forall r1 r2 r. R.Union r1 r2 r => HMap r1 -> HMap r2 -> HMap r
 union (HMap m) (HMap n) = HMap $ unsafeUnion m n
 
