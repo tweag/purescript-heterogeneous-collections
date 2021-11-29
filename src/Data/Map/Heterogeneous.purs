@@ -21,6 +21,7 @@ module Data.Map.Heterogeneous
   , setWith
   , size
   , showHMapFields
+  , singleton
   , toRecord
   ) where
 
@@ -58,7 +59,6 @@ import Unsafe.Coerce (unsafeCoerce)
 -- TODO add unions :: f (HMap r) -> HMap r
 -- TODO add toUnfoldable :: HMap r -> f (Variant r)
 -- TODO add unsafeToUnfoldable :: HMap r -> f (Variant r)      (unrdered)
--- TODO add singleton :: Variant r -> HMap r
 -- TODO add member :: Proxy l -> HMap r -> Boolean
 -- TODO add isSubmap :: HMap r1 -> HMap r2 -> Boolean
 -- TODO add intersectionWith :: Record duplicateHandlers -> HMap r1 -> HMap r2 -> HMap duplicates
@@ -303,6 +303,17 @@ rename prev next r =
   case get prev r of
     Nothing -> addLabel next (delete prev r :: HMap inter)
     Just a -> insert next a (delete prev r :: HMap inter)
+
+-- | Create a Row Map with one element
+singleton
+  :: forall r' r label a
+   . IsSymbol label
+  => R.Lacks label r'
+  => R.Cons label a r' r
+  => Proxy label
+  -> a
+  -> HMap r
+singleton label a = insert label a empty
 
 -- | The number of keys present in the map
 size :: forall r. HMap r -> Int
