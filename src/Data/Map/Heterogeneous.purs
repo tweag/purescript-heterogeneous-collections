@@ -3,6 +3,7 @@ module Data.Map.Heterogeneous
   , class EqHMapFields
   , class HMapRecord
   , class ShowHMapFields
+  , addLabel
   , clear
   , delete
   , empty
@@ -258,7 +259,7 @@ insert
 insert p a (HMap m) = HMap $ unsafeSet (reflectSymbol p) a m
 
 -- | Add a new label to the row without adding a value.
-addName
+addLabel
   :: forall r1 r2 l a
    . IsSymbol l
   => R.Lacks l r1
@@ -266,7 +267,7 @@ addName
   => Proxy l
   -> HMap r1
   -> HMap r2
-addName _ = unsafeCoerce
+addLabel _ = unsafeCoerce
 
 -- | Remove a value from a HMap, removing the label from the row.
 delete
@@ -294,7 +295,7 @@ rename
   -> HMap output
 rename prev next r =
   case get prev r of
-    Nothing -> addName next (delete prev r :: HMap inter)
+    Nothing -> addLabel next (delete prev r :: HMap inter)
     Just a -> insert next a (delete prev r :: HMap inter)
 
 -- | Create an empty Row Map
