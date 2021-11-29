@@ -51,3 +51,20 @@ exports.unsafeSize = function (map) {
 };
 
 exports.unsafeEmpty = {};
+
+exports.unsafeUnion = function (map1) {
+  return function (map2) {
+    var union = {};
+    for (var key in map1) {
+      if ({}.hasOwnProperty.call(map1, key)) {
+        union[key] = map1[key];
+      }
+    }
+    for (var key in map2) {
+      if ({}.hasOwnProperty.call(map2, key)) {
+        union[key] = map2[key];
+      }
+    }
+    return union;
+  };
+};

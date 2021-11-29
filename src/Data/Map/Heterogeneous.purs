@@ -23,6 +23,7 @@ module Data.Map.Heterogeneous
   , showHMapFields
   , singleton
   , toRecord
+  , union
   ) where
 
 import Prelude
@@ -37,6 +38,7 @@ import Data.Map.Heterogeneous.Unsafe
   , unsafeGet
   , unsafeSet
   , unsafeSize
+  , unsafeUnion
   )
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (joinWith)
@@ -263,6 +265,10 @@ insert p a (HMap m) = HMap $ unsafeSet (reflectSymbol p) a m
 -- | Add new labels to the row.
 expand :: forall r1 r2 r. R.Union r1 r2 r => HMap r1 -> HMap r
 expand = unsafeCoerce
+
+-- | Union two HMaps
+union :: forall r1 r2 r. R.Union r1 r2 r => HMap r1 -> HMap r2 -> HMap r
+union (HMap m) (HMap n) = HMap $ unsafeUnion m n
 
 -- | Add a new label to the row without adding a value.
 addLabel

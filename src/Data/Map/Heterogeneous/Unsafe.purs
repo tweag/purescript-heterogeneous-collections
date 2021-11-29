@@ -6,6 +6,7 @@ module Data.Map.Heterogeneous.Unsafe
   , unsafeMember
   , unsafeSet
   , unsafeSize
+  , unsafeUnion
   ) where
 
 foreign import data UnsafeHMap :: forall k. Row k -> Type
@@ -24,3 +25,6 @@ foreign import unsafeSet
   :: forall r1 r2 a. String -> a -> UnsafeHMap r1 -> UnsafeHMap r2
 
 foreign import unsafeEmpty :: forall r. UnsafeHMap r
+
+foreign import unsafeUnion
+  :: forall r1 r2 r3. UnsafeHMap r1 -> UnsafeHMap r2 -> UnsafeHMap r3
