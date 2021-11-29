@@ -13,15 +13,24 @@ exports.unsafeGet = function (wrap) {
   };
 };
 
-exports.unsafeDelete = function (label) {
-  return function (map) {
-    var copy = {};
-    for (var key in map) {
-      if (key !== label && {}.hasOwnProperty.call(map, key)) {
-        copy[key] = map[key];
-      }
-    }
-    return copy;
+exports.unsafePop = function (label) {
+  return function (onNotFound) {
+    return function (wrap) {
+      return function (map) {
+        var copy = {};
+        var value = undefined;
+        for (var key in map) {
+          if (key !== label && {}.hasOwnProperty.call(map, key)) {
+            copy[key] = map[key];
+          } else if (key === label) {
+            value = map[key];
+          }
+        }
+        return value === undefined
+          ? onNotFound
+          : wrap(value)(copy);
+      };
+    };
   };
 };
 

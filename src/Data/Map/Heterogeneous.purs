@@ -15,6 +15,7 @@ module Data.Map.Heterogeneous
   , hmapToRecord
   , insert
   , isEmpty
+  , pop
   , rename
   , set
   , setWith
@@ -31,26 +32,17 @@ import Prelude
 import Data.Array as Array
 import Data.List (List)
 import Data.List as List
-import Data.Map.Heterogeneous.Unsafe
-  ( UnsafeHMap
-  , unsafeDelete
-  , unsafeEmpty
-  , unsafeGet
-  , unsafeSet
-  , unsafeSize
-  , unsafeUnion
-  )
+import Data.Map.Heterogeneous.Unsafe (UnsafeHMap, unsafeEmpty, unsafeGet, unsafePop, unsafeSet, unsafeSize, unsafeUnion)
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Tuple (Tuple(..))
 import Prim.Row as R
 import Prim.RowList (class RowToList, Cons, Nil, RowList)
 import Record as Record
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
--- TODO rename delete to pop
--- TODO rename clear to delete
 -- TODO rename get to lookup
 -- TODO rename insert to push
 -- TODO rename set to insert
@@ -224,16 +216,42 @@ setWith
   -> HMap r2
 setWith f k b m = flip (set k) m $ maybe b (f b) $ get k m
 
--- | Remove a value from a HMap without affecting the row type.
-clear
+-- | Remove a value from a HMap, removing the label from the row.
+delete
+  :: forall r1 r2 l a
+   . IsSymbol l
+  => R.Cons l a r2 r1
+  => R.Lacks l r2
+  => Proxy l
+  -> HMap r1
+  -> HMap r2
+delete label (HMap m) =
+  HMap $ unsafePop (reflectSymbol label) (unsafeCoerce m) const m
+
+-- | Delete a key and its corresponding value from a map, returning the value
+-- | as well as the subsequent map.
+pop
   :: forall r1 r2 r l a b
    . IsSymbol l
   => R.Cons l a r r1
   => R.Cons l b r r2
   => Proxy l
   -> HMap r1
-  -> HMap r2
-clear p (HMap m) = HMap $ unsafeDelete (reflectSymbol p) m
+  -> Maybe (Tuple a (HMap r2))
+pop label (HMap m) =
+  unsafePop (reflectSymbol label) Nothing (\a -> Just <<< Tuple a <<< HMap) m
+
+-- | Remove a value from a HMap without affecting the row type.
+clear
+  :: forall r' r l a
+   . IsSymbol l
+  => R.Cons l a r' r
+  => R.Lacks l r'
+  => Proxy l
+  -> HMap r
+  -> HMap r
+clear label (HMap m) =
+  unsafePop (reflectSymbol label) (HMap m) (const $ addLabel label <<< HMap) m
 
 -- | Change a value within a row map with an update function.
 update
@@ -279,17 +297,6 @@ addLabel
   -> HMap r1
   -> HMap r2
 addLabel _ = unsafeCoerce
-
--- | Remove a value from a HMap, removing the label from the row.
-delete
-  :: forall r1 r2 l a
-   . IsSymbol l
-  => R.Cons l a r2 r1
-  => R.Lacks l r2
-  => Proxy l
-  -> HMap r1
-  -> HMap r2
-delete p (HMap m) = HMap $ unsafeDelete (reflectSymbol p) m
 
 -- | Change one of the labels in a row.
 rename

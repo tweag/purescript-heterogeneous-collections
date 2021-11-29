@@ -1,6 +1,6 @@
 module Data.Map.Heterogeneous.Unsafe
   ( UnsafeHMap
-  , unsafeDelete
+  , unsafePop
   , unsafeEmpty
   , unsafeGet
   , unsafeMember
@@ -11,13 +11,18 @@ module Data.Map.Heterogeneous.Unsafe
 
 foreign import data UnsafeHMap :: forall k. Row k -> Type
 
-foreign import unsafeDelete
-  :: forall r1 r2. String -> UnsafeHMap r1 -> UnsafeHMap r2
-
 foreign import unsafeGet
   :: forall r a b. (a -> b) -> b -> String -> UnsafeHMap r -> b
 
 foreign import unsafeMember :: forall r. String -> UnsafeHMap r -> Boolean
+
+foreign import unsafePop
+  :: forall r1 r2 a b
+   . String
+  -> b
+  -> (a -> UnsafeHMap r2 -> b)
+  -> UnsafeHMap r1
+  -> b
 
 foreign import unsafeSize :: forall r. UnsafeHMap r -> Int
 
