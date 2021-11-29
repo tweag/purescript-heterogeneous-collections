@@ -8,6 +8,7 @@ module Data.Map.Heterogeneous
   , delete
   , empty
   , eqHMapFields
+  , expand
   , fromRecord
   , get
   , insert
@@ -257,6 +258,10 @@ insert
   -> HMap r1
   -> HMap r2
 insert p a (HMap m) = HMap $ unsafeSet (reflectSymbol p) a m
+
+-- | Add new labels to the row.
+expand :: forall r1 r2 r. R.Union r1 r2 r => HMap r1 -> HMap r
+expand = unsafeCoerce
 
 -- | Add a new label to the row without adding a value.
 addLabel
