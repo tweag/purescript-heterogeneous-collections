@@ -10,11 +10,11 @@ module Data.Map.Heterogeneous
   , eqHMapFields
   , expand
   , fromRecord
-  , get
   , hmapFromRecord
   , hmapToRecord
   , insert
   , isEmpty
+  , lookup
   , pop
   , rename
   , set
@@ -43,7 +43,6 @@ import Record as Record
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
--- TODO rename get to lookup
 -- TODO rename insert to push
 -- TODO rename set to insert
 -- TODO rename setWith to insertWith
@@ -100,7 +99,7 @@ instance eqHMapFieldsCons ::
   ) =>
   EqHMapFields (Cons l a rl) r where
   eqHMapFields _ a b =
-    get (Proxy :: _ l) a == get (Proxy :: _ l) b
+    lookup (Proxy :: _ l) a == lookup (Proxy :: _ l) b
       && eqHMapFields (Proxy :: _ rl) (unsafeCoerce a) (unsafeCoerce b)
 
 instance eqHMap :: (RowToList r rl, EqHMapFields rl r) => Eq (HMap r) where
@@ -122,7 +121,7 @@ instance showHMapCons ::
   ) =>
   ShowHMapFields (Cons l a rl) r where
   showHMapFields _ hmap =
-    List.fromFoldable (showAtLabel <$> get (Proxy :: _ l) hmap)
+    List.fromFoldable (showAtLabel <$> lookup (Proxy :: _ l) hmap)
       <> showHMapFields (Proxy :: _ rl) (unsafeCoerce hmap)
     where
     showAtLabel a = joinWith ": " [ reflectSymbol (Proxy :: _ l), show a ]
@@ -160,7 +159,7 @@ instance hmapRecordCons ::
   , IsSymbol l
   ) =>
   HMapRecord (Cons l a rl) r rec where
-  hmapToRecord _ r = Record.insert label (get label r) $ hmapToRecord rl $
+  hmapToRecord _ r = Record.insert label (lookup label r) $ hmapToRecord rl $
     unsafeCoerce r
     where
     label :: Proxy l
@@ -179,15 +178,15 @@ instance hmapRecordCons ::
     rl :: Proxy rl
     rl = Proxy
 
--- | Get a value from a HMap. Returns nothing if the value is not found.
-get
-  :: forall r' r l a
-   . IsSymbol l
-  => R.Cons l a r' r
-  => Proxy l
+-- | Lookup a value for a specified key.
+lookup
+  :: forall r' r k a
+   . IsSymbol k
+  => R.Cons k a r' r
+  => Proxy k
   -> HMap r
   -> Maybe a
-get p (HMap m) = unsafeGet Just Nothing (reflectSymbol p) m
+lookup k (HMap m) = unsafeGet Just Nothing (reflectSymbol k) m
 
 -- | Add a value to a HMap without affecting the row type.
 set
@@ -214,7 +213,7 @@ setWith
   -> b
   -> HMap r1
   -> HMap r2
-setWith f k b m = flip (set k) m $ maybe b (f b) $ get k m
+setWith f k b m = flip (set k) m $ maybe b (f b) $ lookup k m
 
 -- | Remove a value from a HMap, removing the label from the row.
 delete
@@ -263,7 +262,7 @@ update
   -> (a -> b)
   -> HMap r1
   -> HMap r2
-update p f m = case get p m of
+update p f m = case lookup p m of
   Nothing -> unsafeCoerce m
   Just a -> set p (f a) m
 
@@ -312,7 +311,7 @@ rename
   -> HMap input
   -> HMap output
 rename prev next r =
-  case get prev r of
+  case lookup prev r of
     Nothing -> addLabel next (delete prev r :: HMap inter)
     Just a -> insert next a (delete prev r :: HMap inter)
 

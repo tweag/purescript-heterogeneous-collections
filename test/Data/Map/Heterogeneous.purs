@@ -6,7 +6,7 @@ import Data.Map.Heterogeneous
   ( HMap
   , clear
   , fromRecord
-  , get
+  , lookup
   , update
   , set
   , toRecord
@@ -45,8 +45,8 @@ _bar = Proxy
 
 spec :: Spec Unit
 spec = do
-  describe "get@_foo" $ elimSpec (get _foo) (Record.get _foo)
-  describe "get@_bar" $ elimSpec (get _bar) (Record.get _bar)
+  describe "lookup@_foo" $ elimSpec (lookup _foo) (Record.get _foo)
+  describe "lookup@_bar" $ elimSpec (lookup _bar) (Record.get _bar)
   describe "set@_foo" $ termSpec2 (set _foo) Just (Record.set _foo)
   describe "set@_bar" $ termSpec2 (set _bar) Just (Record.set _bar)
   describe "clear@_foo" $ termSpec (clear _foo) (Record.set _foo Nothing)
