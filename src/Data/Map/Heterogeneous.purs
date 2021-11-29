@@ -1,6 +1,7 @@
 module Data.Map.Heterogeneous
   ( HMap
   , addLabel
+  , alter
   , class EqHMapFields
   , class HMapRecord
   , class ShowHMapFields
@@ -60,7 +61,6 @@ import Unsafe.Coerce (unsafeCoerce)
 -- TODO add compact :: HMap rMaybes -> HMap r
 -- TODO add compactMap :: Record maybeMappers -> HMap r1 -> HMap r2
 -- TODO add map :: Record mappers -> HMap r1 -> HMap r2
--- TODO add alter :: (Maybe a -> Maybe b) -> Proxy k -> HMap r1 -> HMap r2
 
 -- | A map whose keys and values are backed by a row or types. Within the map,
 -- | the types of values is determined by the value of the keys. Values may or
@@ -234,6 +234,25 @@ upsertWith
   -> HMap r2
 upsertWith f k b m = flip (upsert k) m $ maybe b (f b) $ lookup k m
 
+-- | Insert the value, delete a value, or update a value for a key in a map
+alter
+  :: forall r1 r2 r l a b
+   . IsSymbol l
+  => R.Cons l a r r1
+  => R.Cons l b r r2
+  => R.Lacks l r
+  => (Maybe a -> Maybe b)
+  -> Proxy l
+  -> HMap r1
+  -> HMap r2
+alter f k m = case pop k m of
+  Nothing -> case f Nothing of
+    Nothing -> addLabel k $ delete k m
+    Just b -> upsert k b m
+  Just (Tuple a m') -> case f (Just a) of
+    Nothing -> addLabel k m'
+    Just b -> insert k b m'
+
 -- | Remove a value from a HMap, removing the label from the row.
 delete
   :: forall r1 r2 l a
@@ -249,13 +268,12 @@ delete label (HMap m) =
 -- | Delete a key and its corresponding value from a map, returning the value
 -- | as well as the subsequent map.
 pop
-  :: forall r1 r2 r l a b
+  :: forall r' r l a
    . IsSymbol l
-  => R.Cons l a r r1
-  => R.Cons l b r r2
+  => R.Cons l a r' r
   => Proxy l
-  -> HMap r1
-  -> Maybe (Tuple a (HMap r2))
+  -> HMap r
+  -> Maybe (Tuple a (HMap r'))
 pop label (HMap m) =
   unsafePop (reflectSymbol label) Nothing (\a -> Just <<< Tuple a <<< HMap) m
 
