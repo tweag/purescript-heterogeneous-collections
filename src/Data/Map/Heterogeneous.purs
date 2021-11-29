@@ -11,11 +11,11 @@ module Data.Map.Heterogeneous
   , expand
   , fromRecord
   , get
+  , hmapFromRecord
+  , hmapToRecord
   , insert
   , modify
   , rename
-  , hmapFromRecord
-  , hmapToRecord
   , set
   , setWith
   , showHMapFields
