@@ -7,7 +7,7 @@ import Data.Map.Heterogeneous
   , clear
   , fromRecord
   , get
-  , modify
+  , update
   , set
   , toRecord
   )
@@ -51,10 +51,10 @@ spec = do
   describe "set@_bar" $ termSpec2 (set _bar) Just (Record.set _bar)
   describe "clear@_foo" $ termSpec (clear _foo) (Record.set _foo Nothing)
   describe "clear@_bar" $ termSpec (clear _bar) (Record.set _bar Nothing)
-  describe "modify@_foo" do
-    termSpec (modify _foo (mul 2)) (Record.modify _foo (map (mul 2)))
-  describe "modify@_bar" do
-    termSpec (modify _bar toUpper) (Record.modify _bar (map toUpper))
+  describe "update@_foo" do
+    termSpec (update _foo (mul 2)) (Record.modify _foo (map (mul 2)))
+  describe "update@_bar" do
+    termSpec (update _bar toUpper) (Record.modify _bar (map toUpper))
 
 elimSpec
   :: forall a

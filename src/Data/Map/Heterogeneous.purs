@@ -1,9 +1,9 @@
 module Data.Map.Heterogeneous
   ( HMap
+  , addLabel
   , class EqHMapFields
   , class HMapRecord
   , class ShowHMapFields
-  , addLabel
   , clear
   , delete
   , empty
@@ -15,15 +15,15 @@ module Data.Map.Heterogeneous
   , hmapToRecord
   , insert
   , isEmpty
-  , modify
   , rename
   , set
   , setWith
-  , size
   , showHMapFields
   , singleton
+  , size
   , toRecord
   , union
+  , update
   ) where
 
 import Prelude
@@ -49,7 +49,6 @@ import Record as Record
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
--- TODO rename modify to update
 -- TODO rename delete to pop
 -- TODO rename clear to delete
 -- TODO rename get to lookup
@@ -237,7 +236,7 @@ clear
 clear p (HMap m) = HMap $ unsafeDelete (reflectSymbol p) m
 
 -- | Change a value within a row map with an update function.
-modify
+update
   :: forall r1 r2 r l a b
    . IsSymbol l
   => R.Cons l a r r1
@@ -246,7 +245,7 @@ modify
   -> (a -> b)
   -> HMap r1
   -> HMap r2
-modify p f m = case get p m of
+update p f m = case get p m of
   Nothing -> unsafeCoerce m
   Just a -> set p (f a) m
 
