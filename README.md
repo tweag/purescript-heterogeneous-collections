@@ -28,3 +28,15 @@ This library adds the following additional types:
   with the Variant key removed from the row.
 - `Null` An empty collection. They have size 0 for an N-row parameter. Mostly
   included for completeness.
+
+## Building the Project
+
+TODO
+
+## Running the Tests
+
+TODO
+
+## What's Included in The Nix Shell
+
+TODO
