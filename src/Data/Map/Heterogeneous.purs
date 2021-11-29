@@ -12,10 +12,10 @@ module Data.Map.Heterogeneous
   , fromRecord
   , hmapFromRecord
   , hmapToRecord
-  , insert
   , isEmpty
   , lookup
   , pop
+  , push
   , rename
   , set
   , setWith
@@ -43,8 +43,6 @@ import Record as Record
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
--- TODO rename insert to push
--- TODO rename set to insert
 -- TODO rename setWith to insertWith
 -- TODO add unionWith :: Record duplicateHandlers -> HMap r1 -> HMap r2 -> HMap r3
 -- TODO add union :: HMap r1 -> HMap r2 -> HMap r3
@@ -170,7 +168,7 @@ instance hmapRecordCons ::
   hmapFromRecord _ r =
     case Record.get label r of
       Nothing -> unsafeCoerce $ hmapFromRecord rl $ unsafeCoerce r
-      Just a -> insert label a $ hmapFromRecord rl $ unsafeCoerce r
+      Just a -> push label a $ hmapFromRecord rl $ unsafeCoerce r
     where
     label :: Proxy l
     label = Proxy
@@ -267,7 +265,7 @@ update p f m = case lookup p m of
   Just a -> set p (f a) m
 
 -- | Add a value to a HMap, adding a new label to the row.
-insert
+push
   :: forall r1 r2 l a
    . IsSymbol l
   => R.Lacks l r1
@@ -276,7 +274,7 @@ insert
   -> a
   -> HMap r1
   -> HMap r2
-insert p a (HMap m) = HMap $ unsafeSet (reflectSymbol p) a m
+push p a (HMap m) = HMap $ unsafeSet (reflectSymbol p) a m
 
 -- | Add new labels to the row.
 expand :: forall r1 r2 r. R.Union r1 r2 r => HMap r1 -> HMap r
@@ -313,7 +311,7 @@ rename
 rename prev next r =
   case lookup prev r of
     Nothing -> addLabel next (delete prev r :: HMap inter)
-    Just a -> insert next a (delete prev r :: HMap inter)
+    Just a -> push next a (delete prev r :: HMap inter)
 
 -- | Create a Row Map with one element
 singleton
@@ -324,7 +322,7 @@ singleton
   => Proxy label
   -> a
   -> HMap r
-singleton label a = insert label a empty
+singleton label a = push label a empty
 
 -- | The number of keys present in the map
 size :: forall r. HMap r -> Int
